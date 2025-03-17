@@ -30,6 +30,7 @@ return new class extends Migration
         Schema::table('event_participants', function (Blueprint $table) {
             $table->dropForeign(['event_id']);
             $table->dropForeign(['user_id']);
+            $table->dropUnique(['event_id', 'user_id']);
         });
 
         Schema::dropIfExists('event_participants');
