@@ -24,6 +24,7 @@ class EventController extends Controller
     {
         $perPage = $request->input('per_page', 9);
 
+        // TODO: Event facade o'chiriladi. Service klaslar to'g'ridan to'g'ri controllerda chaqiriladi.
         $activeEvents = $this->eventFacade->getActiveEvents()->paginate($perPage);
         $upcomingEvents = $this->eventFacade->getUpcomingEvents()->paginate($perPage);
 

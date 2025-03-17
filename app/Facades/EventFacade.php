@@ -23,7 +23,7 @@ class EventFacade
     public function createEvent(array $data, ?UploadedFile $image = null, string $eventType = 'custom')
     {
         $event = null;
-
+// TODO: Eventlarni interface va klas yordamida yaratadigan qilish
         switch ($eventType) {
             case 'sport':
                 $event = $this->eventFactory->createSportEvent($data);
