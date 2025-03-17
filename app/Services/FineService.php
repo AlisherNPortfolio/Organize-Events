@@ -2,20 +2,20 @@
 
 namespace App\Services;
 
-use App\Repositories\Interfaces\UserFineRepositoryInterface;
-use App\Repositories\Interfaces\UserRepositoryInterface;
-use App\Strategies\FineCalculation\FineCalculationStrategyInterface;
+use App\Repositories\Contracts\IUserFineRepository;
+use App\Repositories\Contracts\IUserRepository;
 use App\Strategies\FineCalculation\DefaultFineStrategy;
+use App\Strategies\FineCalculation\IFineCalculationStrategy;
 
 class FineService
-{    protected $fineStrategy;
+{
 
     public function __construct(
         protected IUserFineRepository $userFineRepository,
         protected IUserRepository $userRepository,
-        IFineCalculationStrategy $fineStrategy = null
+        protected IFineCalculationStrategy $fineStrategy
     ) {
-        $this->fineStrategy = $fineStrategy ?? new DefaultFineStrategy();
+        $this->fineStrategy = $fineStrategy ?? new DefaultFineStrategy($userFineRepository);
     }
 
     public function applyFine($userId, $eventId, $reason)
