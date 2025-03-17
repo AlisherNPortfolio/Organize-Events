@@ -1,132 +1,185 @@
 <template>
-<div class="events-container">
-    <div v-if="loading" class="flex justify-center items-center py-8">
-        <div class="spinner">
+    <div class="events-container">
+      <div v-if="loading" class="d-flex justify-content-center py-5">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading...</span>
         </div>
-    </div>
-    <div v-else-if="events.length === 0" class="text-center py-8">
-        <p class="text-gray-500">No events found.</p>
-    </div>
-    <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div v-for="event in events" :key="event.id" class="bg-white rounded-lg shadow-md overflow-hidden">
-            <div v-if="event.image_path" class="h-48 overflow-hidden">
-                <img :src="'/storage/' + event.image_path" :alt="event.name" class="w-full h-full object-cover">
-            </div>
-            <div v-else class="h-48 bg-gray-200 flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-            </div>
-            <div class="p-4">
-                <h3 class="text-xl font-semibold mb-2">{{ event.name }}</h3>
-                <p class="text-gray-600 mb-4 truncate">{{ event.description }}</p>
-                <div class="flex justify-between items-center text-sm text-gray-500 mb-4">
-                    <div class="flex items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                        {{ formatDate(event.event_date) }}
-                    </div>
-                    <div class="flex items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                        {{ truncateText(event.address, 20) }}
-                    </div>
+      </div>
+      <div v-else-if="events.length === 0" class="text-center py-5">
+        <p class="text-muted">No events found.</p>
+      </div>
+      <div v-else>
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+          <div v-for="event in paginatedEvents" :key="event.id" class="col">
+            <div class="card h-100 event-card">
+              <div v-if="event.image_path" class="card-img-top-container">
+                <img :src="'/storage/' + event.image_path" :alt="event.name" class="card-img-top event-image">
+              </div>
+              <div v-else class="bg-light d-flex align-items-center justify-content-center event-image">
+                <i class="bi bi-image text-secondary" style="font-size: 2rem;"></i>
+              </div>
+              <div class="card-body">
+                <h5 class="card-title">{{ event.name }}</h5>
+                <p class="card-text text-truncate">{{ event.description }}</p>
+                <div class="d-flex justify-content-between align-items-center mb-3 text-muted small">
+                  <div>
+                    <i class="bi bi-calendar me-1"></i> {{ formatDate(event.event_date) }}
+                  </div>
+                  <div>
+                    <i class="bi bi-geo-alt me-1"></i> {{ truncateText(event.address, 20) }}
+                  </div>
                 </div>
-                <div class="flex justify-between items-center">
-                    <div class="text-sm">
-                        <span class="font-medium">{{ event.participants_count || 0 }}</span> / {{ event.max_participants }} participants
-                    </div>
-                    <a :href="'/events/' + event.id" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded text-sm">View Details</a>
+                <div class="d-flex justify-content-between align-items-center">
+                  <div class="small">
+                    <span class="fw-medium">{{ event.participants_count || 0 }}</span> / {{ event.max_participants }} participants
+                  </div>
+                  <a :href="'/events/' + event.id" class="btn btn-sm btn-primary">View Details</a>
                 </div>
+              </div>
             </div>
+          </div>
         </div>
+
+        <!-- Pagination -->
+        <nav aria-label="Page navigation" class="mt-5" v-if="totalPages > 1">
+          <ul class="pagination justify-content-center">
+            <li class="page-item" :class="{ disabled: currentPage === 1 }">
+              <a class="page-link" href="#" @click.prevent="changePage(currentPage - 1)" aria-label="Previous">
+                <span aria-hidden="true">&laquo;</span>
+              </a>
+            </li>
+            <li v-for="page in displayedPages" :key="page" class="page-item" :class="{ active: currentPage === page, disabled: page === '...' }">
+              <a class="page-link" href="#" @click.prevent="page === '...' ? null : changePage(page)">{{ page }}</a>
+            </li>
+            <li class="page-item" :class="{ disabled: currentPage === totalPages }">
+              <a class="page-link" href="#" @click.prevent="changePage(currentPage + 1)" aria-label="Next">
+                <span aria-hidden="true">&raquo;</span>
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </div>
     </div>
-</div>
-</template>
+  </template>
 
-
-<script>
-export default {
+  <script>
+  export default {
     props: {
-        initialEvents: {
-            type: Array,
-            required: false,
-            default: () => []
-        },
-        apiUrl: {
-            type: String,
-            required: false,
-            default: '/api/events'
-        },
-        autoload: {
-            type: Boolean,
-            required: false,
-            default: true
-        }
+      initialEvents: {
+        type: Array,
+        required: false,
+        default: () => []
+      },
+      apiUrl: {
+        type: String,
+        required: false,
+        default: '/api/events'
+      },
+      autoload: {
+        type: Boolean,
+        required: false,
+        default: true
+      },
+      perPage: {
+        type: Number,
+        required: false,
+        default: 9
+      }
     },
     data() {
-        return {
-            events: this.initialEvents,
-            loading: false
+      return {
+        events: this.initialEvents,
+        loading: false,
+        currentPage: 1
+      }
+    },
+    computed: {
+      totalPages() {
+        return Math.ceil(this.events.length / this.perPage);
+      },
+      paginatedEvents() {
+        const startIndex = (this.currentPage - 1) * this.perPage;
+        const endIndex = startIndex + this.perPage;
+        return this.events.slice(startIndex, endIndex);
+      },
+      displayedPages() {
+        const pages = [];
+        const totalPages = this.totalPages;
+        const currentPage = this.currentPage;
+
+        if (totalPages <= 7) {
+          // If there are 7 or fewer pages, show all
+          for (let i = 1; i <= totalPages; i++) {
+            pages.push(i);
+          }
+        } else {
+          // Always show the first page
+          pages.push(1);
+
+          // Calculate start and end of the displayed page range
+          let startPage = Math.max(2, currentPage - 1);
+          let endPage = Math.min(totalPages - 1, currentPage + 1);
+
+          // Adjust start and end to always show 3 pages
+          if (startPage === 2) endPage = 4;
+          if (endPage === totalPages - 1) startPage = totalPages - 3;
+
+          // Add ellipsis if needed before the range
+          if (startPage > 2) pages.push('...');
+
+          // Add the page range
+          for (let i = startPage; i <= endPage; i++) {
+            pages.push(i);
+          }
+
+          // Add ellipsis if needed after the range
+          if (endPage < totalPages - 1) pages.push('...');
+
+          // Always show the last page
+          pages.push(totalPages);
         }
+
+        return pages;
+      }
     },
     mounted() {
-        if (this.autoload && this.events.length === 0) {
-            this.loadEvents();
-        }
+      if (this.autoload && this.events.length === 0) {
+        this.loadEvents();
+      }
     },
     methods: {
-        loadEvents() {
-            this.loading = true;
+      loadEvents() {
+        this.loading = true;
 
-            fetch(this.apiUrl)
-                .then(response => response.json())
-                .then(data => {
-                    this.events = data;
-                    this.loading = false;
-                })
-                .catch(error => {
-                    console.error('Error loading events:', error);
-                    this.loading = false;
-                });
-        },
-        formatDate(dateString) {
-            const options = {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric'
-            };
-            return new Date(dateString).toLocaleDateString(undefined, options);
-        },
-        truncateText(text, length) {
-            if (text.length <= length) return text;
-            return text.substring(0, length) + '...';
-        }
+        fetch(this.apiUrl)
+          .then(response => response.json())
+          .then(data => {
+            this.events = data;
+            this.loading = false;
+          })
+          .catch(error => {
+            console.error('Error loading events:', error);
+            this.loading = false;
+          });
+      },
+      formatDate(dateString) {
+        const options = { year: 'numeric', month: 'short', day: 'numeric' };
+        return new Date(dateString).toLocaleDateString(undefined, options);
+      },
+      truncateText(text, length) {
+        if (!text) return '';
+        if (text.length <= length) return text;
+        return text.substring(0, length) + '...';
+      },
+      changePage(page) {
+        if (page < 1 || page > this.totalPages) return;
+        this.currentPage = page;
+        // Scroll to top of events section
+        window.scrollTo({
+          top: this.$el.offsetTop - 100,
+          behavior: 'smooth'
+        });
+      }
     }
-}
-</script>
-
-
-<style scoped>
-.spinner {
-    border: 4px solid rgba(0, 0, 0, 0.1);
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    border-left-color: #4f46e5;
-    animation: spin 1s ease infinite;
-}
-
-@keyframes spin {
-    0% {
-        transform: rotate(0deg);
-    }
-
-    100% {
-        transform: rotate(360deg);
-    }
-}
-</style>
+  }
+  </script>

@@ -1,21 +1,24 @@
 <template>
     <div class="event-form">
-      <form @submit.prevent="submitForm" class="space-y-6">
-        <div v-if="errors.length > 0" class="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded relative mb-4">
-          <strong class="font-bold">Please fix the following errors:
-            </strong>
-          <ul class="mt-2 list-disc list-inside">
-            <li v-for="(error, index) in errors" :key="index">{{ error }}</li>
-          </ul>
-        </div>
+      <h3 class="event-form-heading">{{ isEdit ? 'Edit Event' : 'Create New Event' }}</h3>
 
-        <div class="space-y-4">
-          <div>
-            <label for="event_type" class="block text-sm font-medium text-gray-700">Event Type</label>
+      <div v-if="errors.length > 0" class="alert alert-danger mb-4">
+        <strong>Please fix the following errors:</strong>
+        <ul class="mt-2 mb-0">
+          <li v-for="(error, index) in errors" :key="index">{{ error }}</li>
+        </ul>
+      </div>
+
+      <form @submit.prevent="submitForm" class="needs-validation">
+        <div class="event-form-section">
+          <h4 class="event-form-section-title">Basic Information</h4>
+
+          <div class="mb-3">
+            <label for="event_type" class="form-label">Event Type</label>
             <select
               id="event_type"
               v-model="form.event_type"
-              class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              class="form-select"
             >
               <option value="custom">Custom Event</option>
               <option value="sport">Sport Event</option>
@@ -24,146 +27,165 @@
             </select>
           </div>
 
-          <div>
-            <label for="name" class="block text-sm font-medium text-gray-700">Event Name</label>
+          <div class="mb-3">
+            <label for="name" class="form-label">Event Name</label>
             <input
               type="text"
               id="name"
               v-model="form.name"
-              class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+              class="form-control"
               required
             >
           </div>
 
-          <div>
-            <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
+          <div class="mb-3">
+            <label for="description" class="form-label">Description</label>
             <textarea
               id="description"
               v-model="form.description"
               rows="4"
-              class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+              class="form-control"
               required
             ></textarea>
           </div>
+        </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label for="event_date" class="block text-sm font-medium text-gray-700">Event Date</label>
-              <input
-                type="date"
-                id="event_date"
-                v-model="form.event_date"
-                class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
-                :min="minDate"
-                required
-              >
+        <div class="event-form-section">
+          <h4 class="event-form-section-title">Date and Location</h4>
+
+          <div class="row g-3">
+            <div class="col-md-6">
+              <div class="mb-3 date-picker">
+                <label for="event_date" class="form-label">Event Date</label>
+                <input
+                  type="date"
+                  id="event_date"
+                  v-model="form.event_date"
+                  class="form-control"
+                  :min="minDate"
+                  required
+                >
+              </div>
             </div>
 
-            <div>
-              <label for="start_time" class="block text-sm font-medium text-gray-700">Start Time</label>
-              <input
-                type="time"
-                id="start_time"
-                v-model="form.start_time"
-                class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
-                required
-              >
+            <div class="col-md-6">
+              <div class="mb-3 time-picker">
+                <label for="start_time" class="form-label">Start Time</label>
+                <input
+                  type="time"
+                  id="start_time"
+                  v-model="form.start_time"
+                  class="form-control"
+                  required
+                >
+              </div>
             </div>
           </div>
 
-          <div>
-            <label for="end_time" class="block text-sm font-medium text-gray-700">End Time (optional)</label>
+          <div class="mb-3 time-picker">
+            <label for="end_time" class="form-label">End Time (optional)</label>
             <input
               type="time"
               id="end_time"
               v-model="form.end_time"
-              class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+              class="form-control"
             >
           </div>
 
-          <div>
-            <label for="address" class="block text-sm font-medium text-gray-700">Meeting Address</label>
+          <div class="mb-3">
+            <label for="address" class="form-label">Meeting Address</label>
             <input
               type="text"
               id="address"
               v-model="form.address"
-              class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+              class="form-control"
               required
             >
           </div>
+        </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label for="min_participants" class="block text-sm font-medium text-gray-700">Minimum Participants</label>
-              <input
-                type="number"
-                id="min_participants"
-                v-model.number="form.min_participants"
-                min="1"
-                class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
-                required
-              >
+        <div class="event-form-section">
+          <h4 class="event-form-section-title">Participation Settings</h4>
+
+          <div class="row g-3">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="min_participants" class="form-label">Minimum Participants</label>
+                <input
+                  type="number"
+                  id="min_participants"
+                  v-model.number="form.min_participants"
+                  min="1"
+                  class="form-control"
+                  required
+                >
+              </div>
             </div>
 
-            <div>
-              <label for="max_participants" class="block text-sm font-medium text-gray-700">Maximum Participants</label>
-              <input
-                type="number"
-                id="max_participants"
-                v-model.number="form.max_participants"
-                :min="form.min_participants || 1"
-                class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
-                required
-              >
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="max_participants" class="form-label">Maximum Participants</label>
+                <input
+                  type="number"
+                  id="max_participants"
+                  v-model.number="form.max_participants"
+                  :min="form.min_participants || 1"
+                  class="form-control"
+                  required
+                >
+              </div>
             </div>
           </div>
 
-          <div>
-            <label for="voting_expiry_time" class="block text-sm font-medium text-gray-700">Voting Expiry Date and Time</label>
+          <div class="mb-4">
+            <label for="voting_expiry_time" class="form-label">Voting Expiry Date and Time</label>
             <input
               type="datetime-local"
               id="voting_expiry_time"
               v-model="form.voting_expiry_time"
-              class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+              class="form-control"
               :min="minDateTime"
               :max="maxVotingDateTime"
               required
             >
-          </div>
-
-          <div>
-            <label for="image" class="block text-sm font-medium text-gray-700">Event Image (optional)</label>
-            <input
-              type="file"
-              id="image"
-              @change="handleImageUpload"
-              accept="image/*"
-              class="mt-1 block w-full text-sm text-gray-500
-                     file:mr-4 file:py-2 file:px-4
-                     file:rounded-md file:border-0
-                     file:text-sm file:font-semibold
-                     file:bg-blue-50 file:text-blue-700
-                     hover:file:bg-blue-100"
-            >
-            <div v-if="imagePreview" class="mt-2">
-              <img :src="imagePreview" alt="Preview" class="h-32 w-auto rounded-md">
-            </div>
+            <div class="form-text">Participants can sign up until this date/time</div>
           </div>
         </div>
 
-        <div class="flex justify-end">
+        <div class="event-form-section">
+          <h4 class="event-form-section-title">Event Image</h4>
+
+          <div class="mb-3">
+            <label for="image" class="form-label">Event Image (optional)</label>
+            <input
+              type="file"
+              class="form-control"
+              id="image"
+              @change="handleImageUpload"
+              accept="image/*"
+            >
+            <div class="form-text">Upload an image to make your event more attractive (max 2MB)</div>
+          </div>
+
+          <div v-if="imagePreview" class="mt-3">
+            <img :src="imagePreview" alt="Preview" class="image-preview" style="max-height: 200px;">
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-end mt-4">
           <button
             type="button"
             @click="$emit('cancel')"
-            class="mr-2 bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            class="btn btn-outline-secondary me-2"
           >
             Cancel
           </button>
           <button
             type="submit"
-            class="bg-blue-600 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            class="btn btn-primary btn-submit"
             :disabled="submitting"
           >
+            <span v-if="submitting" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
             {{ submitting ? 'Saving...' : (isEdit ? 'Update Event' : 'Create Event') }}
           </button>
         </div>

@@ -1,27 +1,35 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="py-12">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between items-center mb-6">
-            <h1 class="text-3xl font-bold text-gray-900">Events</h1>
-            <a href="{{ route('events.create') }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">
-                Create Event
-            </a>
-        </div>
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2">Events</h1>
+        @if(Auth::user() && (Auth::user()->role === 'admin' || Auth::user()->role === 'creator'))
+        <a href="{{ route('events.create') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-1"></i> Create Event
+        </a>
+        @endif
+    </div>
 
-        <div class="bg-white shadow-lg rounded-lg overflow-hidden mb-8">
-            <div class="px-4 py-5 sm:p-6">
-                <h2 class="text-xl font-semibold text-gray-900 mb-4">Active Events</h2>
-                <event-list :initial-events='@json($activeEvents)' :autoload="false"></event-list>
-            </div>
+    <div class="card mb-4">
+        <div class="card-header bg-white">
+            <h2 class="h5 mb-0">Active Events</h2>
         </div>
+        <div class="card-body">
+            <event-list :initial-events='@json($activeEvents->items())' :autoload="false"></event-list>
 
-        <div class="bg-white shadow-lg rounded-lg overflow-hidden">
-            <div class="px-4 py-5 sm:p-6">
-                <h2 class="text-xl font-semibold text-gray-900 mb-4">Upcoming Events</h2>
-                <event-list :initial-events='@json($upcomingEvents)' :autoload="false"></event-list>
-            </div>
+            {{ $activeEvents->links('pagination::bootstrap-5') }}
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header bg-white">
+            <h2 class="h5 mb-0">Upcoming Events</h2>
+        </div>
+        <div class="card-body">
+            <event-list :initial-events='@json($upcomingEvents->items())' :autoload="false"></event-list>
+
+            {{ $upcomingEvents->links('pagination::bootstrap-5') }}
         </div>
     </div>
 </div>

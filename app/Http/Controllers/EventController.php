@@ -6,6 +6,7 @@ use App\Facades\EventFacade;
 use App\Facades\UserFacade;
 use App\Http\Requests\Event\StoreEventRequest;
 use App\Http\Requests\Event\UpdateEventRequest;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class EventController extends Controller
@@ -19,15 +20,12 @@ class EventController extends Controller
         return ['auth'];
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        if (Auth::user()->hasPermission('events.view-any')) {
-            $activeEvents = $this->eventFacade->getActiveEvents();
-            $upcomingEvents = $this->eventFacade->getUpcomingEvents();
-        } else {
-            $activeEvents = $this->eventFacade->getActiveEvents();
-            $upcomingEvents = $this->eventFacade->getUpcomingEvents();
-        }
+        $perPage = $request->input('per_page', 9);
+
+        $activeEvents = $this->eventFacade->getActiveEvents()->paginate($perPage);
+        $upcomingEvents = $this->eventFacade->getUpcomingEvents()->paginate($perPage);
 
         return view('events.index', compact('activeEvents', 'upcomingEvents'));
     }
