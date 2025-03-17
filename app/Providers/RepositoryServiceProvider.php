@@ -31,21 +31,6 @@ class RepositoryServiceProvider extends ServiceProvider
         $this->app->bind(IEventParticipantRepository::class, EventParticipantRepository::class);
         $this->app->bind(IEventImageRepository::class, EventImageRepository::class);
         $this->app->bind(IUserFineRepository::class, UserFineRepository::class);
-
-        $this->app->bind(IFineCalculationStrategy::class, function ($app) {
-            return [
-                $app->make('App\Strategies\FineCalculation\DefaultFineStrategy'),
-                $app->make('App\Strategies\FineCalculation\ProgressiveFineStrategy')
-            ];
-        });
-
-        $this->app->bind(INotificationStrategy::class, function ($app) {
-            return [
-                $app->make('App\Strategies\Notification\PushNotificationStrategy'),
-                $app->make('App\Strategies\Notification\InAppNotificationStrategy'),
-                $app->make('App\Strategies\Notification\EmailNotificationStrategy')
-            ];
-        });
     }
 
     /**

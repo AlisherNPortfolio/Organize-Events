@@ -3,10 +3,11 @@
 namespace App\Services;
 
 use App\Strategies\Notification\EmailNotificationStrategy;
+use App\Strategies\Notification\INotificationStrategy;
 
 class NotificationService
 {
-    public function __construct(protected NotificationStrategy $notificationStrategy)
+    public function __construct(protected INotificationStrategy $notificationStrategy)
     {
         $this->notificationStrategy = $notificationStrategy ?? new EmailNotificationStrategy();
     }
