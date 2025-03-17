@@ -7,11 +7,16 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\DB;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
+
+    const ROLE_ADMIN = 'admin';
+    const ROLE_CREATOR = 'creator';
+    const ROLE_USER = 'user';
 
     /**
      * The attributes that are mass assignable.
@@ -76,5 +81,59 @@ class User extends Authenticatable
     public function isFined(): bool
     {
         return $this->fine_until !== null && $this->fine_until > now();
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->role === self::ROLE_ADMIN;
+    }
+
+    /**
+     * Check if user is a creator
+     */
+    public function isCreator(): bool
+    {
+        return $this->role === self::ROLE_CREATOR;
+    }
+
+    /**
+     * Check if user is a regular user
+     */
+    public function isUser(): bool
+    {
+        return $this->role === self::ROLE_USER;
+    }
+
+    /**
+     * Check if the user has a specific permission
+     */
+    public function hasPermission(string $permissionSlug): bool
+    {
+        if ($this->isAdmin()) {
+            return true;
+        }
+
+        // Check if the user's role has the specific permission
+        return DB::table('permissions')
+            ->join('role_permission', 'permissions.id', '=', 'role_permission.permission_id')
+            ->where('permissions.slug', $permissionSlug)
+            ->where('role_permission.role', $this->role)
+            ->exists();
+    }
+
+    /**
+     * Get all permissions for this user based on their role
+     */
+    public function getAllPermissions(): array
+    {
+        if ($this->isAdmin()) {
+            return Permission::pluck('slug')->toArray();
+        }
+
+        return DB::table('permissions')
+            ->join('role_permission', 'permissions.id', '=', 'role_permission.permission_id')
+            ->where('role_permission.role', $this->role)
+            ->pluck('permissions.slug')
+            ->toArray();
     }
 }
