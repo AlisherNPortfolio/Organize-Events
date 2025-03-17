@@ -1,1 +1,16 @@
 import './bootstrap';
+
+import { createApp } from 'vue/dist/vue.esm-bundler.js';
+import EventListComponent from './components/EventListComponent.vue';
+import EventFormComponent from './components/EventFormComponent.vue';
+import ParticipantsListComponent from './components/ParticipantsListComponent.vue';
+import EventImagesComponent from './components/EventImagesComponent.vue';
+
+const app = createApp({});
+
+app.component('event-list', EventListComponent);
+app.component('event-form', EventFormComponent);
+app.component('participants-list', ParticipantsListComponent);
+app.component('event-images', EventImagesComponent);
+
+app.mount('#app');
