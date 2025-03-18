@@ -4,7 +4,6 @@ namespace App\Repositories;
 
 use App\Models\User;
 use App\Repositories\Contracts\IUserRepository;
-use App\Repositories\Interfaces\UserRepositoryInterface;
 
 class UserRepository extends BaseRepository implements IUserRepository
 {
@@ -34,5 +33,10 @@ class UserRepository extends BaseRepository implements IUserRepository
     {
         $user = $this->find($id);
         return $user->isFined();
+    }
+
+    public function getUserWithEvents($id)
+    {
+        return $this->model->with('events')->findOrFail($id);
     }
 }

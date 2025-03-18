@@ -62,8 +62,6 @@ class UserController extends Controller
             'status' => 'required|in:active,inactive,banned',
         ]);
 
-        $user = $this->userFacade->getUser($id);
-
         $data = $request->only(['name', 'email', 'phone', 'role', 'status']);
 
         // If removing a fine, clear the fine_until date

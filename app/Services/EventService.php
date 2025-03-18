@@ -66,9 +66,9 @@ class EventService
         return $this->eventRepository->findWithParticipants($id);
     }
 
-    public function getUserEvents($userId)
+    public function getUserEvents($userId, array $relations = [])
     {
-        return $this->eventRepository->getUserEvents($userId);
+        return $this->eventRepository->getUserEvents($userId, $relations);
     }
 
     public function getActiveEvents()

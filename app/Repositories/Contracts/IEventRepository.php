@@ -6,7 +6,7 @@ interface IEventRepository extends IRepository
 {
     public function findWithParticipants($id);
     public function getActiveEvents();
-    public function getUserEvents($userId);
+    public function getUserEvents($userId, array $relations = []);
     public function getEventsWithOpenVoting();
     public function getUpcomingEvents();
     public function getUpcomingEventsQuery();

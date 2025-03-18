@@ -4,6 +4,7 @@ namespace App\Repositories;
 
 use App\Models\Event;
 use App\Repositories\Contracts\IEventRepository;
+use Illuminate\Support\Facades\DB;
 
 class EventRepository extends BaseRepository implements IEventRepository
 {
@@ -29,20 +30,16 @@ class EventRepository extends BaseRepository implements IEventRepository
                 ->orderBy('event_date');
     }
 
-/*************  ✨ Codeium Command ⭐  *************/
-    /**
-     * Retrieve all events created by a specific user, ordered by creation date in descending order.
-     *
-     * @param int $userId The ID of the user whose events are to be retrieved.
-     * @return \Illuminate\Database\Eloquent\Collection The collection of events.
-     */
-
-/******  8e6571f2-db5a-4194-b805-1bf23d7e9aaf  *******/
-    public function getUserEvents($userId)
+    public function getUserEvents($userId, array $relations = [])
     {
-        return $this->model->where('user_id', $userId)
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $query = $this->model;
+        if (!empty($relations)) {
+            $query = $query->with($relations);
+        }
+
+        return $query->where('events.user_id', $userId)
+            ->orderBy('events.created_at', 'desc')
+            ->paginate();
     }
 
     public function getEventsWithOpenVoting()

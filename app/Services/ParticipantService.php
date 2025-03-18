@@ -88,7 +88,7 @@ class ParticipantService
         ];
     }
 
-    public function markAttendance($participantId, $status)
+    public function markAttendance($participantId, string $status)
     {
         if ($status === 'attended') {
             return $this->participantRepository->markAsAttended($participantId);
