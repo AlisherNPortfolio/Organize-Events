@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Facades\EventFacade;
-use Illuminate\Http\Request;
+use App\Http\Requests\Event\EventImageStoreRequest;
+use App\Services\ImageUploadService;
+use Illuminate\Support\Facades\Auth;
 
 class EventImageController extends Controller
 {
-    public function __construct(protected EventFacade $eventFacade)
+    public function __construct(protected ImageUploadService $imageUploadService)
     {
     }
 
@@ -18,15 +19,13 @@ class EventImageController extends Controller
         ];
     }
 
-    public function store(Request $request, $eventId)
+    public function store(EventImageStoreRequest $request, $eventId)
     {
-        $request->validate([
-            'image' => 'required|image|max:2048',
-        ]);
+        $request->validated();
 
-        $result = $this->eventFacade->uploadEventImage(
+        $result = $this->imageUploadService->uploadEventImage(
             $eventId,
-            auth()->id(),
+            Auth::id(),
             $request->file('image')
         );
 
