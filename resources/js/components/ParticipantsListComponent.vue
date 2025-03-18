@@ -118,6 +118,7 @@
       }
     },
     mounted() {
+        console.log(this.initialParticipants);
       if (this.apiUrl && this.participants.length === 0) {
         this.loadParticipants();
       }
