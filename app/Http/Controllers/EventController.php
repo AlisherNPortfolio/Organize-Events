@@ -2,16 +2,27 @@
 
 namespace App\Http\Controllers;
 
-use App\Facades\EventFacade;
-use App\Facades\UserFacade;
+use App\Factories\EventFactory;
 use App\Http\Requests\Event\StoreEventRequest;
 use App\Http\Requests\Event\UpdateEventRequest;
+use App\Services\EventService;
+use App\Services\ImageUploadService;
+use App\Services\NotificationService;
+use App\Services\ParticipantService;
+use App\Services\UserService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class EventController extends Controller
 {
-    public function __construct(protected EventFacade $eventFacade, protected UserFacade $userFacade)
+    public function __construct(
+        protected EventService $eventService,
+        protected NotificationService $notificationService,
+        protected EventFactory $eventFactory,
+        protected ImageUploadService $imageUploadService,
+        protected UserService $userService,
+        protected ParticipantService $participantService
+        )
     {
     }
 
@@ -24,9 +35,9 @@ class EventController extends Controller
     {
         $perPage = $request->input('per_page', 9);
 
-        // TODO: Event facade o'chiriladi. Service klaslar to'g'ridan to'g'ri controllerda chaqiriladi.
-        $activeEvents = $this->eventFacade->getActiveEventsQuery()->paginate($perPage);
-        $upcomingEvents = $this->eventFacade->getUpcomingEventsQuery()->paginate($perPage);
+        // TODO: Eventdagi va boshqa barcha paginationlar vue bilan moslashtiriladi
+        $activeEvents = $this->eventService->getActiveEventsQuery()->paginate($perPage);
+        $upcomingEvents = $this->eventService->getUpcomingEventsQuery()->paginate($perPage);
 
         return view('events.index', compact('activeEvents', 'upcomingEvents'));
     }
@@ -35,7 +46,7 @@ class EventController extends Controller
     {
         if (!Auth::user()->hasPermission('events.create')) {
             return redirect()->route('events.index')
-                ->with('error', 'You do not have permission to create events.');
+                ->with('error', 'Sizda tadbir yaratish uchun ruxsat yoq');
         }
 
         return view('events.create');
@@ -45,17 +56,18 @@ class EventController extends Controller
     {
         if (!Auth::user()->hasPermission('events.create')) {
             return redirect()->route('events.index')
-                ->with('error', 'You do not have permission to create events.');
+                ->with('error', 'Sizda tadbir yaratish uchun ruxsat yoq');
         }
 
         $data = $request->validated();
         $data['user_id'] = Auth::id();
 
-        $event = $this->eventFacade->createEvent(
-            $data,
-            $request->hasFile('image') ? $request->file('image') : null,
-            $request->input('event_type', 'custom')
-        );
+        $image = $request->hasFile('image') ? $request->file('image') : null;
+        $eventType = $request->input('event_type', 'custom');
+
+        $event = $this->eventService->createEventByType($eventType, $data, $image);
+
+        $this->notificationService->sendEventCreationNotification($event);
 
         return redirect()->route('events.show', $event)
             ->with('success', 'Event created successfully!');
@@ -63,27 +75,28 @@ class EventController extends Controller
 
     public function show($id)
     {
-        $event = $this->eventFacade->getEvent($id);
-        $images = $this->eventFacade->getEventImages($id);
-        $isCreator = $event->user_id === Auth::id();
-        $currentUser = $this->userFacade->getCurrentUser();
+        $event = $this->eventService->getEvent($id);
+        $images = $this->imageUploadService->getEventImages($id);
+        $currentUser = $this->userService->getCurrentUser();
+        $isCreator = $event->user_id === $currentUser->id;
 
-        $isOwnEvent = $event->user_id === Auth::id();
+
+        $isOwnEvent = $event->user_id === $currentUser->id;
         $isAdmin = $currentUser->isAdmin();
 
         if ($currentUser->isCreator() && !$isOwnEvent && !$currentUser->hasPermission('events.view-any')) {
             return redirect()->route('events.index')
-                ->with('error', 'You can only view your own events.');
+                ->with('error', 'Siz faqat o\'zingiz yaratgan tadbirni ko\'rishingiz mumkin.');
         }
 
-        $userParticipation = $event->participants()->where('user_id', Auth::id())->first();
+        $userParticipation = $event->participants()->where('user_id', $currentUser->id)->first();
 
         $canUploadImages = $isCreator ||
                            $isAdmin ||
                            ($userParticipation && $event->status === 'active' &&
                             $currentUser->hasPermission('images.upload'));
 
-        $eventImages = $this->eventFacade->getEventImages($id);
+        $eventImages = $this->imageUploadService->getEventImages($id);
 
         return view('events.show', compact(
             'event',
@@ -98,12 +111,12 @@ class EventController extends Controller
 
     public function edit($id)
     {
-        $event = $this->eventFacade->getEvent($id);
-        $currentUser = $this->userFacade->getCurrentUser();
+        $event = $this->eventService->getEvent($id);
+        $currentUser = $this->userService->getCurrentUser();
 
-        if ($event->user_id !== Auth::id() && !$currentUser->hasPermission('events.update-any')) {
+        if ($event->user_id !== $currentUser->id && !$currentUser->hasPermission('events.update-any')) {
             return redirect()->route('events.show', $event)
-                ->with('error', 'You do not have permission to edit this event.');
+                ->with('error', 'Sizda bu tadbirni tahrirlash uchun ruxsat yoq');
         }
 
         return view('events.edit', compact('event'));
@@ -113,50 +126,56 @@ class EventController extends Controller
     {
         $data = $request->validated();
 
-        $event = $this->eventFacade->getEvent($id);
-        $currentUser = $this->userFacade->getCurrentUser();
+        $event = $this->eventService->getEvent($id);
+        $currentUser = $this->userService->getCurrentUser();
 
-        if ($event->user_id !== Auth::id() && !$currentUser->hasPermission('events.update-any')) {
+        if ($event->user_id !== $currentUser->id && !$currentUser->hasPermission('events.update-any')) {
             return redirect()->route('events.show', $event)
-                ->with('error', 'You do not have permission to edit this event.');
+                ->with('error', 'Sizda bu tadbirni tahrirlash uchun ruxsat yoq');
         }
 
-        $this->eventFacade->updateEvent(
+        $this->eventService->updateEvent(
             $id,
             $data,
             $request->hasFile('image') ? $request->file('image') : null
         );
 
         return redirect()->route('events.show', $event)
-            ->with('success', 'Event updated successfully!');
+            ->with('success', 'Tadbir tahrirlandi!');
     }
 
     public function destroy($id)
     {
-        $event = $this->eventFacade->getEvent($id);
-        $currentUser = $this->userFacade->getCurrentUser();
+        $event = $this->eventService->getEvent($id);
+        $currentUser = $this->userService->getCurrentUser();
 
-        if ($event->user_id !== Auth::id() && !$currentUser->hasPermission('events.delete-any')) {
+        if ($event->user_id !== $currentUser->id && !$currentUser->hasPermission('events.delete-any')) {
             return redirect()->route('events.show', $event)
-                ->with('error', 'You do not have permission to delete this event.');
+                ->with('error', 'Sizda bu tadbirni o\'chirish uchun ruxsat yoq');
         }
 
-        $this->eventFacade->cancelEvent($id);
+        $this->eventService->cancelEvent($id);
 
         return redirect()->route('events.index')
-            ->with('success', 'Event cancelled successfully!');
+            ->with('success', 'Tadbir bekor qilindi!');
     }
 
     public function vote($id)
     {
-        $currentUser = $this->userFacade->getCurrentUser();
+        $currentUser = $this->userService->getCurrentUser();
 
         if (!$currentUser->hasPermission('events.participate')) {
             return redirect()->route('events.show', $id)
-                ->with('error', 'You do not have permission to participate in events.');
+                ->with('error', 'Sizda bu tadbirga qatnashishga ruxsat yo\'q.');
         }
 
-        $result = $this->eventFacade->voteForEvent($id, Auth::id());
+        $result = $this->participantService->voteForEvent($id, $currentUser->id);
+
+        if ($result['status']) {
+            $event = $this->eventService->getEvent($id);
+            $user = $event->participants()->where('user_id', $currentUser->id)->first()->user;
+            $this->notificationService->sendEventParticipationNotification($event, $user);
+        }
 
         if ($result['status']) {
             return redirect()->route('events.show', $id)
@@ -169,14 +188,14 @@ class EventController extends Controller
 
     public function cancelVote($id)
     {
-        $currentUser = $this->userFacade->getCurrentUser();
+        $currentUser = $this->userService->getCurrentUser();
 
         if (!$currentUser->hasPermission('events.participate')) {
             return redirect()->route('events.show', $id)
-                ->with('error', 'You do not have permission to participate in events.');
+                ->with('error', 'Sizda tadbirlarga qatnashishga ruxsat yo\'q.');
         }
 
-        $result = $this->eventFacade->cancelVote($id, Auth::id());
+        $result = $this->participantService->cancelVote($id, Auth::id());
 
         if ($result['status']) {
             return redirect()->route('events.show', $id)
@@ -189,25 +208,25 @@ class EventController extends Controller
 
     public function complete($id)
     {
-        $event = $this->eventFacade->getEvent($id);
-        $currentUser = $this->userFacade->getCurrentUser();
+        $event = $this->eventService->getEvent($id);
+        $currentUser = $this->userService->getCurrentUser();
 
-        if ($event->user_id !== Auth::id() && !$currentUser->hasPermission('events.complete-any')) {
+        if ($event->user_id !== $currentUser->id && !$currentUser->hasPermission('events.complete-any')) {
             return redirect()->route('events.show', $event)
-                ->with('error', 'You do not have permission to complete this event.');
+                ->with('error', 'Sizda tadbirni yakunlash uchun ruxsat yo\'q.');
         }
 
-        $this->eventFacade->completeEvent($id);
+        $this->eventService->completeEvent($id);
 
         return redirect()->route('events.show', $id)
-            ->with('success', 'Event marked as completed!');
+            ->with('success', 'Tadbir yakunlandi!');
     }
 
     public function myEvents()
     {
-        $currentUser = $this->userFacade->getCurrentUser();
+        $currentUser = $this->userService->getCurrentUser();
 
-        $events = $this->eventFacade->getUserEvents(Auth::id());
+        $events = $this->eventService->getUserEvents($currentUser->id);
 
         return view('events.my-events', compact('events'));
     }

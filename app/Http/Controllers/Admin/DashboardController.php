@@ -3,13 +3,15 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Event;
-use App\Models\User;
-use App\Models\UserFine;
-use Illuminate\Http\Request;
+use App\Repositories\CommonRepository;
+use App\Services\EventService;
+use App\Services\UserService;
 
 class DashboardController extends Controller
 {
+    public function __construct(protected UserService $userService, protected EventService $eventService, protected CommonRepository $commonRepository)
+    {
+    }
     public static function middleware()
     {
         return [
@@ -25,19 +27,19 @@ class DashboardController extends Controller
     public function index()
     {
         $stats = [
-            'total_users' => User::count(),
-            'total_creators' => User::where('role', User::ROLE_CREATOR)->count(),
-            'total_events' => Event::count(),
-            'active_events' => Event::where('status', 'active')->count(),
-            'upcoming_events' => Event::where('status', 'active')->where('event_date', '>=', now())->count(),
-            'completed_events' => Event::where('status', 'completed')->count(),
-            'cancelled_events' => Event::where('status', 'cancelled')->count(),
-            'total_fines' => UserFine::count(),
-            'active_fines' => UserFine::where('fine_until', '>', now())->count(),
+            'total_users' => $this->commonRepository->getUsersCount(),
+            'total_creators' => $this->commonRepository->getCreatorsCount(),
+            'total_events' => $this->commonRepository->getEventsCount(),
+            'active_events' => $this->commonRepository->getActiveEventsCount(),
+            'upcoming_events' => $this->commonRepository->getUpcomingEventsCount(),
+            'completed_events' => $this->commonRepository->getCompletedEventsCount(),
+            'cancelled_events' => $this->commonRepository->getCancelledEventsCount(),
+            'total_fines' => $this->commonRepository->getFinesCount(),
+            'active_fines' => $this->commonRepository->getActiveFinesCount(),
         ];
 
-        $latestUsers = User::orderBy('created_at', 'desc')->take(5)->get();
-        $latestEvents = Event::with('creator')->orderBy('created_at', 'desc')->take(5)->get();
+        $latestUsers = $this->commonRepository->getLatestUsers();
+        $latestEvents = $this->commonRepository->getLatestEvents();
 
         return view('admin.dashboard', compact('stats', 'latestUsers', 'latestEvents'));
     }

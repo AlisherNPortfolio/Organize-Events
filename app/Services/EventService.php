@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Factories\EventFactory;
 use App\Repositories\Contracts\IEventParticipantRepository;
 use App\Repositories\Contracts\IEventRepository;
 use Illuminate\Http\UploadedFile;
@@ -11,7 +12,8 @@ class EventService
 {
     public function __construct(
         protected IEventRepository $eventRepository,
-        protected IEventParticipantRepository $participantRepository
+        protected IEventParticipantRepository $participantRepository,
+        protected EventFactory $eventFactory
     ) {
     }
 
@@ -25,10 +27,43 @@ class EventService
         return $this->eventRepository->create($data);
     }
 
+    public function createEventByType($eventType, array $data, ?UploadedFile $image = null)
+    {
+        $event = null;
+        // TODO: Eventlarni interface va klas yordamida yaratadigan qilish
+        switch ($eventType) {
+            case 'sport':
+                $event = $this->eventFactory->createSportEvent($data);
+                break;
+            case 'meetup':
+                $event = $this->eventFactory->createMeetupEvent($data);
+                break;
+            case 'travel':
+                $event = $this->eventFactory->createTravelEvent($data);
+                break;
+            case 'custom':
+            default:
+                $event = $this->eventFactory->createCustomEvent($data);
+                break;
+        }
+
+        if ($image) {
+            if ($event->image_path) {
+                Storage::disk('public')->delete($event->image_path);
+            }
+
+            $imagePath = $this->uploadEventImage($image);
+
+            $event->image_path = $imagePath;
+            $event->save();
+        }
+
+        return $event;
+    }
+
     private function uploadEventImage(UploadedFile $image)
     {
-        $path = $image->store('events', 'public');
-        return $path;
+        return $image->store('events', 'public');
     }
 
     public function updateEvent($id, array $data, ?UploadedFile $image = null)
@@ -36,7 +71,6 @@ class EventService
         $event = $this->eventRepository->find($id);
 
         if ($image) {
-            // Delete old image if exists
             if ($event->image_path) {
                 Storage::disk('public')->delete($event->image_path);
             }
@@ -45,9 +79,9 @@ class EventService
             $data['image_path'] = $imagePath;
         }
 
-        $this->eventRepository->update($data, $id);
+        $event->update($data);
 
-        return $this->eventRepository->find($id);
+        return $event;
     }
 
     public function deleteEvent($id)

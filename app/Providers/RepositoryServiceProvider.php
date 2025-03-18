@@ -3,6 +3,8 @@
 namespace App\Providers;
 
 use App\Repositories\BaseRepository;
+use App\Repositories\CommonRepository;
+use App\Repositories\Contracts\ICommonRepository;
 use App\Repositories\Contracts\IEventImageRepository;
 use App\Repositories\Contracts\IEventParticipantRepository;
 use App\Repositories\Contracts\IEventRepository;
@@ -31,6 +33,7 @@ class RepositoryServiceProvider extends ServiceProvider
         $this->app->bind(IEventParticipantRepository::class, EventParticipantRepository::class);
         $this->app->bind(IEventImageRepository::class, EventImageRepository::class);
         $this->app->bind(IUserFineRepository::class, UserFineRepository::class);
+        $this->app->bind(ICommonRepository::class, CommonRepository::class);
     }
 
     /**

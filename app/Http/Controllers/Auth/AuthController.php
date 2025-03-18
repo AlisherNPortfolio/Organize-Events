@@ -1,15 +1,16 @@
 <?php
+
 namespace App\Http\Controllers\Auth;
 
-use App\Facades\UserFacade;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
+use App\Services\AuthService;
 use Illuminate\Http\Request;
 
 class AuthController extends Controller
 {
-    public function __construct(protected UserFacade $userFacade)
+    public function __construct(protected AuthService $authService)
     {
     }
 
@@ -23,7 +24,7 @@ class AuthController extends Controller
         $credentials = $request->validated();
         $remember = $request->has('remember');
 
-        $user = $this->userFacade->login($credentials['email'], $credentials['password'], $remember);
+        $user = $this->authService->login($credentials['email'], $credentials['password'], $remember);
 
         if (!$user) {
             return back()->withErrors([
@@ -43,22 +44,22 @@ class AuthController extends Controller
     {
         $data = $request->validated();
 
-        $user = $this->userFacade->register($data);
+        $user = $this->authService->register($data);
 
         if (!$user) {
             return back()->withErrors([
-                'email' => 'Registration failed. Please try again.',
+                'email' => 'Ro\'yxatdan o\'tib bo\'lmadi. Iltimos, qayta urinib ko\'ring.',
             ])->withInput($request->except('password', 'password_confirmation'));
         }
 
-        $this->userFacade->login($data['email'], $data['password']);
+        $this->authService->login($data['email'], $data['password']);
 
         return redirect()->route('events.index');
     }
 
     public function logout(Request $request)
     {
-        $this->userFacade->logout();
+        $this->authService->logout();
 
         return redirect()->route('login');
     }

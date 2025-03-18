@@ -3,13 +3,14 @@
 namespace App\Http\Middleware;
 
 use App\Facades\UserFacade;
+use App\Services\FineService;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class CheckUserFine
 {
-    public function __construct(protected UserFacade $userFacade)
+    public function __construct(protected UserFacade $userFacade, protected FineService $fineService)
     {
     }
 
@@ -28,8 +29,8 @@ class CheckUserFine
 
         $user = Auth::user();
 
-        if ($this->userFacade->isUserFined($user->id)) {
-            $fineStatus = $this->userFacade->getUserFineStatus($user->id);
+        if ($this->fineService->isUserFined($user->id)) {
+            $fineStatus = $this->fineService->checkUserFineStatus($user->id);
 
             $allowedRoutes = ['profile', 'profile.edit', 'profile.update', 'logout'];
 

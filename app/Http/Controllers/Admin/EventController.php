@@ -2,14 +2,13 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Facades\EventFacade;
 use App\Http\Controllers\Controller;
-use App\Models\Event;
-use Illuminate\Http\Request;
+use App\Http\Requests\Event\EventUpdateStatusRequest;
+use App\Services\EventService;
 
 class EventController extends Controller
 {
-    public function __construct(protected EventFacade $eventFacade)
+    public function __construct(protected EventService $eventService)
     {
     }
 
@@ -27,7 +26,7 @@ class EventController extends Controller
      */
     public function index()
     {
-        $events = Event::with('creator')->orderBy('created_at', 'desc')->paginate(15);
+        $events = $this->eventService->getActiveEventsQuery()->paginate(15);
 
         return view('admin.events.index', compact('events'));
     }
@@ -40,7 +39,7 @@ class EventController extends Controller
      */
     public function show($id)
     {
-        $event = $this->eventFacade->getEvent($id);
+        $event = $this->eventService->getEvent($id);
         $eventImages = $event->images()->with('user')->get();
 
         return view('admin.events.show', compact('event', 'eventImages'));
@@ -53,24 +52,22 @@ class EventController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function updateStatus(Request $request, $id)
+    public function updateStatus(EventUpdateStatusRequest $request, $id)
     {
-        $request->validate([
-            'status' => 'required|in:active,pending,completed,cancelled'
-        ]);
+        $request->validated();
 
         $status = $request->input('status');
 
         if ($status === 'completed') {
-            $this->eventFacade->completeEvent($id);
+            $this->eventService->completeEvent($id);
         } elseif ($status === 'cancelled') {
-            $this->eventFacade->cancelEvent($id);
+            $this->eventService->cancelEvent($id);
         } else {
-            $this->eventFacade->updateEvent($id, ['status' => $status]);
+            $this->eventService->updateEvent($id, ['status' => $status]);
         }
 
         return redirect()->route('admin.events.index')
-            ->with('success', 'Event status updated successfully.');
+            ->with('success', 'Tadbir holati yangilandi.');
     }
 
     /**
@@ -81,9 +78,9 @@ class EventController extends Controller
      */
     public function destroy($id)
     {
-        $this->eventFacade->deleteEvent($id);
+        $this->eventService->deleteEvent($id);
 
         return redirect()->route('admin.events.index')
-            ->with('success', 'Event deleted successfully.');
+            ->with('success', 'Tadbir o\'chirildi.');
     }
 }

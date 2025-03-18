@@ -2,22 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use App\Facades\EventFacade;
-use App\Facades\UserFacade;
 use App\Http\Requests\Participant\ParticipantUpdateStatusRequest;
 use App\Services\EventService;
 use App\Services\NotificationService;
 use App\Services\ParticipantService;
 use App\Services\UserService;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
 class ParticipantController extends Controller
 {
     public function __construct(
-        protected EventFacade $eventFacade,
-        protected UserFacade $userFacade,
-
         protected UserService $userService,
         protected EventService $eventService,
         protected ParticipantService $participantService,

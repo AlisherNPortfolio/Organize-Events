@@ -73,4 +73,9 @@ class FineService
             ] : null
         ];
     }
+
+    public function isUserFined($userId)
+    {
+        return $this->userRepository->checkIfUserIsFined($userId);
+    }
 }
