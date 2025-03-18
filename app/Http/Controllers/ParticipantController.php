@@ -60,8 +60,10 @@ class ParticipantController extends Controller
 
         $statusText = $status === 'attended' ? 'attended' : 'absent';
 
-        return redirect()->route('participants.index', $eventId)
-            ->with('success', "Qatnashchi {$statusText} sifatida belgilandi!");
+        return response()->json([
+            'success' => true,
+            'message' => "Qatnashchi {$statusText} sifatida belgilandi!",
+        ]);
     }
 
     // Additional method for creator role
