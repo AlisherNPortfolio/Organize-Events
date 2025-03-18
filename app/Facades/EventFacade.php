@@ -116,9 +116,19 @@ class EventFacade
         return $this->eventService->getActiveEvents();
     }
 
+    public function getActiveEventsQuery()
+    {
+        return $this->eventService->getActiveEventsQuery();
+    }
+
     public function getUpcomingEvents()
     {
         return $this->eventService->getUpcomingEvents();
+    }
+
+    public function getUpcomingEventsQuery()
+    {
+        return $this->eventService->getUpcomingEventsQuery();
     }
 
     public function getEventsWithOpenVoting()

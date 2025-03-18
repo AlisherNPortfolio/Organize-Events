@@ -76,9 +76,19 @@ class EventService
         return $this->eventRepository->getActiveEvents();
     }
 
+    public function getActiveEventsQuery()
+    {
+        return $this->eventRepository->getActiveEventsQuery();
+    }
+
     public function getUpcomingEvents()
     {
         return $this->eventRepository->getUpcomingEvents();
+    }
+
+    public function getUpcomingEventsQuery()
+    {
+        return $this->eventRepository->getUpcomingEventsQuery();
     }
 
     public function getEventsWithOpenVoting()

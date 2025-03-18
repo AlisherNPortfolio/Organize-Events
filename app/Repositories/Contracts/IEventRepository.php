@@ -9,5 +9,7 @@ interface IEventRepository extends IRepository
     public function getUserEvents($userId);
     public function getEventsWithOpenVoting();
     public function getUpcomingEvents();
+    public function getUpcomingEventsQuery();
     public function getEventsByStatus(string $status);
+    public function getActiveEventsQuery();
 }
