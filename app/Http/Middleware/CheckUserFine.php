@@ -2,7 +2,6 @@
 
 namespace App\Http\Middleware;
 
-use App\Facades\UserFacade;
 use App\Services\FineService;
 use Closure;
 use Illuminate\Http\Request;
@@ -10,7 +9,7 @@ use Illuminate\Support\Facades\Auth;
 
 class CheckUserFine
 {
-    public function __construct(protected UserFacade $userFacade, protected FineService $fineService)
+    public function __construct(protected FineService $fineService)
     {
     }
 
