@@ -8,7 +8,9 @@ use App\Http\Controllers\EventController;
 use App\Http\Controllers\EventImageController;
 use App\Http\Controllers\ParticipantController;
 use App\Http\Controllers\UserController;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage;
 
 // Home Routes
 Route::get('/', function () {
@@ -112,9 +114,9 @@ Route::middleware('auth.custom')->prefix('api')->group(function () {
         $event = App\Models\Event::findOrFail($eventId);
 
         // Check if current user is admin, the event creator, or has proper permission
-        if (auth()->user()->isAdmin() ||
-            $event->user_id === auth()->id() ||
-            auth()->user()->hasPermission('participants.view-any')) {
+        if (Auth::user()->isAdmin() ||
+            $event->user_id === Auth::id() ||
+            Auth::user()->hasPermission('participants.view-any')) {
             return $event->participants()->with('user')->get();
         }
 
@@ -122,8 +124,14 @@ Route::middleware('auth.custom')->prefix('api')->group(function () {
     });
 
     Route::get('/events/{event}/images', function ($eventId) {
-        $event = App\Models\Event::findOrFail($eventId);
-        return $event->images()->with('user')->get();
+        $event = App\Models\Event::query()->with('images.user')->findOrFail($eventId);
+        return response()->json([
+            'success' => true,
+            'message' => 'images',
+            'data' => [
+                'images' => $event->images
+            ]
+        ]);
     });
 
     Route::delete('/events/{event}/images/{image}', function ($eventId, $imageId) {
@@ -131,9 +139,9 @@ Route::middleware('auth.custom')->prefix('api')->group(function () {
         $image = $event->images()->findOrFail($imageId);
 
         // Check if current user is the uploader, the event creator, or admin
-        if ($image->user_id === auth()->id() ||
-            $event->user_id === auth()->id() ||
-            auth()->user()->isAdmin()) {
+        if ($image->user_id === Auth::id() ||
+            $event->user_id === Auth::id() ||
+            Auth::user()->isAdmin()) {
 
             // Delete image from storage
             if ($image->image_path) {

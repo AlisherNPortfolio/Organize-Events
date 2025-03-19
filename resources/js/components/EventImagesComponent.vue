@@ -22,7 +22,7 @@
               <button
                 type="submit"
                 class="ml-3 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                :disabled="uploading || !selectedImage"
+                :disabled="uploading"
               >
                 <span v-if="uploading">Uploading...</span>
                 <span v-else>Upload</span>
@@ -57,7 +57,7 @@
             <div class="absolute inset-0 flex items-end p-2 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-lg">
               <div class="w-full flex justify-between items-center">
                 <span class="text-xs text-white">
-                  Uploaded by {{ image.user.name }}
+                  Uploaded by {{ image?.user?.name }}
                 </span>
                 <button
                   v-if="canDeleteImage(image)"
@@ -75,7 +75,7 @@
       </div>
 
       <!-- Image Modal -->
-      <div v-if="selectedImage" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-75" @click="closeImageModal">
+      <div v-if="selectedImage" class="image-modal fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-75" @click="closeImageModal">
         <div class="max-w-4xl max-h-full overflow-auto" @click.stop>
           <img
             :src="'/storage/' + selectedImage.image_path"
@@ -83,7 +83,7 @@
             class="max-w-full max-h-[80vh] object-contain"
           />
           <div class="bg-gray-800 p-4 text-white">
-            <p>Uploaded by {{ selectedImage.user.name }} on {{ formatDate(selectedImage.created_at) }}</p>
+            <p>Uploaded by {{ selectedImage?.user?.name }} on {{ formatDate(selectedImage?.created_at) }}</p>
           </div>
         </div>
       </div>
@@ -149,9 +149,13 @@
         this.loading = true;
 
         fetch(`/api/events/${this.eventId}/images`)
-          .then(response => response.json())
+          .then(response =>  response.json())
           .then(data => {
-            this.images = data;
+            if (data.success) {
+                this.images = data?.data?.images ?? [];
+            } else {
+                alert(data.message);
+            }
             this.loading = false;
           })
           .catch(error => {
@@ -159,7 +163,7 @@
             this.loading = false;
           });
       },
-      handleImageSelect(event) {
+      handleImageSelect(event) {console.log(event.target.files)
         const file = event.target.files[0];
         if (!file) {
           this.selectedFile = null;
@@ -167,7 +171,6 @@
           return;
         }
 
-        // Check if file is an image
         if (!file.type.startsWith('image/')) {
           this.error = 'Please select an image file';
           this.selectedFile = null;
@@ -175,7 +178,6 @@
           return;
         }
 
-        // Check file size (max 2MB)
         if (file.size > 2 * 1024 * 1024) {
           this.error = 'Image size should not exceed 2MB';
           this.selectedFile = null;
@@ -186,7 +188,6 @@
         this.error = null;
         this.selectedFile = file;
 
-        // Create image preview
         const reader = new FileReader();
         reader.onload = e => {
           this.imagePreview = e.target.result;
@@ -223,15 +224,18 @@
           return response.json();
         })
         .then(data => {
-          // Add the new image to the images array
-          this.images.unshift(data.data);
+            if (data.success) {
+                this.images.unshift(data.data.images);
 
-          // Reset form
-          this.selectedFile = null;
-          this.imagePreview = null;
-          this.$refs.imageInput.value = '';
+                this.selectedFile = null;
+                this.imagePreview = null;
+                this.$refs.imageInput.value = '';
 
-          this.uploading = false;
+                this.uploading = false;
+            } else {
+                alert(data.message)
+            }
+
         })
         .catch(error => {
           this.error = error.message || 'An error occurred while uploading the image';

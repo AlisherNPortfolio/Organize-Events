@@ -403,6 +403,21 @@ footer {
     animation: spin 0.8s infinite linear;
   }
 
+  .flex {
+    display: flex;
+  }
+
+  .inline-flex {
+    flex-direction: row;
+  }
+
+  .items-center {
+    align-items: center;
+  }
+
+  .back-to {
+    margin-right: 10px;
+  }
   @keyframes spin {
     to {
       transform: rotate(360deg);

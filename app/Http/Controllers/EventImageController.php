@@ -23,18 +23,10 @@ class EventImageController extends Controller
     {
         $request->validated();
 
-        $result = $this->imageUploadService->uploadEventImage(
+        return $this->imageUploadService->uploadEventImage(
             $eventId,
             Auth::id(),
             $request->file('image')
         );
-
-        if ($result['status']) {
-            return redirect()->route('events.show', $eventId)
-                ->with('success', $result['message']);
-        }
-
-        return redirect()->route('events.show', $eventId)
-            ->with('error', $result['message']);
     }
 }

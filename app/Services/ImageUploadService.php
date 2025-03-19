@@ -21,28 +21,31 @@ class ImageUploadService
     {
         $event = $this->eventRepository->find($eventId);
         if (!in_array($event->status, ['active', 'completed'])) {
-            return [
-                'status' => false,
-                'message' => 'Jarayonda bo\'lgan yoki tugagan tadbirlarga rasm yuklay olmaysiz'
-            ];
+            return response()->json([
+                'success' => false,
+                'message' => 'Jarayonda bo\'lgan yoki tugagan tadbirlarga rasm yuklay olmaysiz',
+                'data' => []
+            ]);
         }
 
         $isCreator = $event->user_id === $userId;
         $isParticipant = $event->participants()->where('user_id', $userId)->exists();
 
         if (!$isCreator && !$isParticipant) {
-            return [
-                'status' => false,
-                'message' => 'Rasm yuklash uchun tadbir qatnashuvchisi yoki egasi bo\'lishingiz kerak'
-            ];
+            return response()->json([
+                'success' => false,
+                'message' => 'Rasm yuklash uchun tadbir qatnashuvchisi yoki egasi bo\'lishingiz kerak',
+                'data' => [ 'images' => []]
+            ]);
         }
 
         $currentImageCount = $this->eventImageRepository->countEventImages($eventId);
         if ($currentImageCount >= $this->maxEventImages) {
-            return [
-                'status' => false,
-                'message' => "Bu tadbir uchun maksimal yuklanadigan rasmlar soni {$this->maxEventImages} ta"
-            ];
+            return response()->json([
+                'success' => false,
+                'message' => "Bu tadbir uchun maksimal yuklanadigan rasmlar soni {$this->maxEventImages} ta",
+                'data' => ['images' => []]
+            ]);
         }
 
         $path = $image->store('event_images', 'public');
@@ -53,11 +56,13 @@ class ImageUploadService
             'image_path' => $path
         ]);
 
-        return [
-            'status' => true,
+        return response()->json([
+            'success' => true,
             'message' => 'Rasm yuklandi',
-            'data' => $eventImage
-        ];
+            'data' => [
+                'images' => $eventImage
+            ]
+        ]);
     }
 
     public function deleteEventImage($imageId, $userId)
